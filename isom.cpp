@@ -1,15 +1,10 @@
-/* mouse1.c 
-Laura Toma
+/* isom.cpp
+Danielle Simon
 
-Example using the mouse in OpenGL.  First the mouse is registered via
-a callback function. Once registered, this function will be called on
-any mouse event in the window.  The user can use this function to
-respond to mouse events. This code will print the coordinates of the
-point where the mouse is clicked, and will draw a small blue disk at
-the point where the mouse is pressed.
+The user can input a shape and specify isometries using
+keyboard letters which are then computed and displayed.
 
 */
-// #include "geom.h" 
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,11 +22,11 @@ the point where the mouse is pressed.
 
 using namespace std; 
 
-GLfloat yellow[3] = {1.0, 1.0, 0.0};
-
 typedef struct _point2d {
   double x,y;
 } point2d;
+
+GLfloat yellow[3] = {1.0, 1.0, 0.0};
 
 // When this is 1, all subsequent clicks will be added to the polygon
 // I can turn this off by pressing 's' and 'e'
@@ -39,6 +34,7 @@ int poly_init_mode = 0;
 
 /* global variables */
 const int WINDOWSIZE = 750; 
+const int INTERP_DIST = 1;
 
 //the current polygon 
 vector<point2d>  poly;
@@ -51,18 +47,24 @@ double mouse_x=-10, mouse_y=-10;  //initialized to a point outside the window
 void display(void);
 void keypress(unsigned char key, int x, int y);
 void mousepress(int button, int state, int x, int y);
-void timerfunc(); 
 
 void initialize_polygon(); 
 void print_polygon(vector<point2d>& poly); 
+
+void interpolate_points();
+void interpolate_points_line(point2d a, point2d b);
+
+void reflection();
+void rotation();
+void hyperbolic_transformation();
+void parabolic_transformation();
 
 
 /* ****************************** */
 int main(int argc, char** argv) {
 
   initialize_polygon();
-  print_polygon(poly);
-
+  //print_polygon(poly);
 
   /* initialize GLUT  */
   glutInit(&argc, argv);
@@ -75,7 +77,6 @@ int main(int argc, char** argv) {
   glutDisplayFunc(display); 
   glutKeyboardFunc(keypress);
   glutMouseFunc(mousepress); 
-  //glutIdleFunc(timerfunc); //register this if you want it called aat every fraame
 
   /* init GL */
   /* set background color black*/
@@ -85,8 +86,6 @@ int main(int argc, char** argv) {
   glutMainLoop();
   return 0;
 }
-
-
 
 
 /* ****************************** */
@@ -134,9 +133,6 @@ void draw_polygon(vector<point2d>& poly){
 }
 
 
-
-
-
 /* our coordinate system is (0,0) x (WINDOWSIZE,WINDOWSIZE) with the
    origin in the lower left corner 
 */
@@ -145,8 +141,6 @@ void draw_circle(double x, double y){
 
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  
 
-  //double r = 20;
-  // for now because 20 was too big in class?
   double r = 5;
   glBegin(GL_POLYGON);
   for(double theta = 0; theta < 2*M_PI; theta+=.3){
@@ -154,7 +148,6 @@ void draw_circle(double x, double y){
   }
   glEnd();
 }
-
 
 
 /* ******************************** */
@@ -208,10 +201,14 @@ void display(void) {
    draw_circle(mouse_x, mouse_y); 
   }
 
+  // to see linear interp
+  for (int i = 0; i < poly.size(); i++) {
+    draw_circle(poly[i].x, poly[i].y);
+  }
+
   /* execute the drawing commands */
   glFlush();
 }
-
 
 
 /* ****************************** */
@@ -228,6 +225,7 @@ void keypress(unsigned char key, int x, int y) {
       break;
     case 'e':
       poly_init_mode = 0;
+      interpolate_points();
       glutPostRedisplay(); 
       break; 
   }
@@ -262,47 +260,60 @@ void mousepress(int button, int state, int x, int y) {
     //left corner; our reference system has the origin in lower left
     //corner, this means we have to reflect y
     mouse_x = (double)x;
-    mouse_y = (double)(WINDOWSIZE - y); 
-    printf("mouse pressed at (%.1f,%.1f)\n", mouse_x, mouse_y); 
-  }
-  if (poly_init_mode == 1) {
-   // add this point to poly 
-   point2d p = {mouse_x, mouse_y};
-   poly.push_back(p);
+    mouse_y = (double)(WINDOWSIZE - y);  
+
+    if (poly_init_mode == 1) {
+      printf("mouse pressed at (%.1f,%.1f)\n", mouse_x, mouse_y);
+      // add this point to poly 
+      point2d p = {mouse_x, mouse_y};
+      poly.push_back(p);
+    }
   }
   
   glutPostRedisplay();
 }
 
 
-
-
-
-//this function is called every frame. Use for animations 
-void timerfunc() {
-  
-  printf("timerfunc: \n"); 
-  mouse_x ++; 
-  mouse_y++; 
-
-  //if (mouse_x, mouse_y) is inside polygon do something otherwise...
-  //if you want the window to be re-drawn, call this 
-  glutPostRedisplay(); 
-
+/* Populates poly with points along the edges */
+void interpolate_points() {
+  int vertices = poly.size();
+  printf("vertices: %d\n", vertices);
+  for (int i = 0; i < poly.size(); i++) {
+    printf("(%lf,%lf)\n", poly[i].x, poly[i].y);
+  }
+  if (vertices < 2) {
+    return;
+  }
+  // Address edge connecting last to first
+  interpolate_points_line(poly[vertices-1], poly[0]);
+  printf("did last");
+  //printf("poly size is now %d", (int)poly.size());
+  interpolate_points_line(poly[vertices - 2], poly[vertices-1]);
+  for (int i = 0; i < vertices - 1; i++) {
+    printf("i is %d\n", i);
+    printf("poly i and i + 1 are now (%lf, %lf), (%lf, %lf)\n", poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y);
+    interpolate_points_line(poly[i], poly[i+1]);
+    printf("poly size is now %d", (int) poly.size());
+  }
+  printf("poly size is now %d", (int) poly.size());
+  return;
 }
 
-
-
-
-/* Handler for window re-size event. Called back when the window first appears and
-   whenever the window is re-sized with its new width and height */
-void reshape(GLsizei width, GLsizei height) {  // GLsizei for non-negative integer
-     
-   // Set the viewport to cover the new window
-   glViewport(0, 0, width, height);
- 
-   glMatrixMode(GL_PROJECTION);  // operate on the Projection matrix
-   glLoadIdentity();             // reset
-   gluOrtho2D(0.0, (GLdouble) width, 0.0, (GLdouble) height); 
+void interpolate_points_line(point2d a, point2d b) {
+  //printf("interping from (%lf, %lf) to (%lf, %lf)\n", a.x, a.y, b.x, b.y);
+  if (abs(a.x - b.x) < INTERP_DIST &&  abs(a.y - b.y) < INTERP_DIST) {
+    //printf("returning\n");
+    return;
+  }
+  point2d mid;
+  mid.x = (a.x + b.x) / 2;
+  mid.y = (a.y + b.y) / 2;
+  poly.push_back(mid);
+  //draw_circle(mid.x, mid.y);
+  //printf("calling with mid (%lf, %lf)\n", mid.x, mid.y);
+  interpolate_points_line(a, mid);
+  interpolate_points_line(mid, b);
+  //printf("done");
+  return;
 }
 
