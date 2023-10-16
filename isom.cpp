@@ -51,9 +51,6 @@ void mousepress(int button, int state, int x, int y);
 void initialize_polygon(); 
 void print_polygon(vector<point2d>& poly); 
 
-void interpolate_points();
-void interpolate_points_line(point2d a, point2d b);
-
 void reflection();
 void rotation();
 void hyperbolic_transformation();
@@ -193,7 +190,10 @@ void display(void) {
   //now we draw in our local coordinate system (0,0) to
   //(WINSIZE,WINSIZE), with the origin in the lower left corner.
 
-  draw_polygon(poly); 
+  //draw_polygon(poly); 
+  for (int i = 0; i < poly.size(); i++) {
+    draw_circle(poly[i].x, poly[i].y);
+  }
 
   //draw a circle where the mouse was last clicked. Note that this
   //point is stored as a global variable and is modified by the mouse handler function 
@@ -225,7 +225,6 @@ void keypress(unsigned char key, int x, int y) {
       break;
     case 'e':
       poly_init_mode = 0;
-      interpolate_points();
       glutPostRedisplay(); 
       break; 
   }
@@ -272,48 +271,3 @@ void mousepress(int button, int state, int x, int y) {
   
   glutPostRedisplay();
 }
-
-
-/* Populates poly with points along the edges */
-void interpolate_points() {
-  int vertices = poly.size();
-  printf("vertices: %d\n", vertices);
-  for (int i = 0; i < poly.size(); i++) {
-    printf("(%lf,%lf)\n", poly[i].x, poly[i].y);
-  }
-  if (vertices < 2) {
-    return;
-  }
-  // Address edge connecting last to first
-  interpolate_points_line(poly[vertices-1], poly[0]);
-  printf("did last");
-  //printf("poly size is now %d", (int)poly.size());
-  interpolate_points_line(poly[vertices - 2], poly[vertices-1]);
-  for (int i = 0; i < vertices - 1; i++) {
-    printf("i is %d\n", i);
-    printf("poly i and i + 1 are now (%lf, %lf), (%lf, %lf)\n", poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y);
-    interpolate_points_line(poly[i], poly[i+1]);
-    printf("poly size is now %d", (int) poly.size());
-  }
-  printf("poly size is now %d", (int) poly.size());
-  return;
-}
-
-void interpolate_points_line(point2d a, point2d b) {
-  //printf("interping from (%lf, %lf) to (%lf, %lf)\n", a.x, a.y, b.x, b.y);
-  if (abs(a.x - b.x) < INTERP_DIST &&  abs(a.y - b.y) < INTERP_DIST) {
-    //printf("returning\n");
-    return;
-  }
-  point2d mid;
-  mid.x = (a.x + b.x) / 2;
-  mid.y = (a.y + b.y) / 2;
-  poly.push_back(mid);
-  //draw_circle(mid.x, mid.y);
-  //printf("calling with mid (%lf, %lf)\n", mid.x, mid.y);
-  interpolate_points_line(a, mid);
-  interpolate_points_line(mid, b);
-  //printf("done");
-  return;
-}
-
