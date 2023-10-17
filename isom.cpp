@@ -9,6 +9,7 @@ keyboard letters which are then computed and displayed.
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
+#include <getopt.h>
 
 #ifdef __APPLE__
 #include <GLUT/glut.h>
@@ -37,6 +38,9 @@ GLfloat white[3] = {1.0, 1.0, 1.0};
 /* global variables */
 const int WINDOWSIZE = 750; 
 int poly_init_mode = 1;
+double k_x;
+double k_y;
+double lambda;
 
 //the current polygon 
 vector<point2d>  poly;
@@ -46,6 +50,7 @@ double mouse_x=-10, mouse_y=-10;  //initialized to a point outside the window
 
 
 /* forward declarations of functions */
+void parse_arguments(int argc, char* const* argv);
 void display(void);
 void keypress(unsigned char key, int x, int y);
 void mousepress(int button, int state, int x, int y);
@@ -62,6 +67,8 @@ void parabolic_transformation();
 
 /* ****************************** */
 int main(int argc, char** argv) {
+
+  parse_arguments(argc, argv);
 
   /* initialize GLUT  */
   glutInit(&argc, argv);
@@ -82,6 +89,62 @@ int main(int argc, char** argv) {
   /* give control to event handler */
   glutMainLoop();
   return 0;
+}
+
+
+/* Helper function for validating port number. 
+    returns: 1 if the arg passed in is an integer or 0 if not. */
+int isNumber(char* str) {
+  for (int i = 0; i < strlen(str); i++) {
+    if (!isdigit(str[i]) && !(i == 0 && str[i] == 45)) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+
+/*
+  Reads command line arguments
+*/
+void parse_arguments(int argc, char* const* argv) { 
+  
+  char c;
+  while ((c = getopt (argc, argv, "x:y:l:")) != -1){
+    switch(c){
+      case 'x':
+        if (isNumber(optarg)) {
+          k_x = atof(optarg);
+        }
+        else {
+          fprintf (stderr, "Option -x requires a numerical argument.\n");
+          exit(1);
+        }
+        break;
+      case 'y':
+        if (isNumber(optarg)) {
+          k_y = atof(optarg);
+        }
+        else {
+          fprintf (stderr, "Option -y requires a numerical argument.\n");
+          exit(1);
+        }
+        break;
+      case 'l':
+        if (isNumber(optarg) && atof(optarg) >= 0) {
+          lambda = atof(optarg);
+        }
+        else {
+          fprintf (stderr, "Option -l requires a non-negative numerical argument.\n");
+          exit(1);
+        }
+        break;
+      default:
+        fprintf(stderr, "Enter -x [x value of k] -y [y value of k] -l [lambda]");
+        exit(1);
+    }
+  }
+  
 }
 
 
