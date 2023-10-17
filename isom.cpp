@@ -32,6 +32,7 @@ GLfloat yellow[3] = {1.0, 1.0, 0.0};
 
 /* global variables */
 const int WINDOWSIZE = 750; 
+int poly_init_mode = 1;
 
 //the current polygon 
 vector<point2d>  poly;
@@ -149,7 +150,47 @@ void keypress(unsigned char key, int x, int y) {
       mouse_y=-10;
       glutPostRedisplay();
       break;
+    case 'r':
+      poly_init_mode = 0;
+      reflection();
+      poly_init_mode = 1;
+      break;
+    case 't':
+      poly_init_mode = 0;
+      rotation();
+      poly_init_mode = 1;
+      break;
+    case 'h':
+      poly_init_mode = 0;
+      hyperbolic_transformation();
+      poly_init_mode = 1;
+      break;
+    case 'p':
+      poly_init_mode = 0;
+      parabolic_transformation();
+      poly_init_mode = 1;
+      break;
   }
+}
+
+void reflection() {
+  printf("performing reflection...\n");
+  return;
+}
+
+void rotation() {
+  printf("performing rotation...\n");
+  return;
+}
+
+void hyperbolic_transformation() {
+  printf("performing hyperbolic transformation...\n");
+  return;
+}
+
+void parabolic_transformation() {
+  printf("performing parabolic transformation...\n");
+  return;
 }
 
 
@@ -184,9 +225,11 @@ void mousepress(int button, int state, int x, int y) {
     mouse_x = (double)x - ((double)WINDOWSIZE)/2;
     mouse_y = (double)(WINDOWSIZE - y);  
 
-    printf("mouse pressed at (%.1f,%.1f)\n", mouse_x, mouse_y);
-    point2d p = {mouse_x, mouse_y};
-    poly.push_back(p);
+    if (poly_init_mode) {
+      printf("mouse pressed at (%.1f,%.1f)\n", mouse_x, mouse_y);
+      point2d p = {mouse_x, mouse_y};
+      poly.push_back(p);
+    }
   }
   
   glutPostRedisplay();
