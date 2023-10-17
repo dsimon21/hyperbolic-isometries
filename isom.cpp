@@ -24,11 +24,15 @@ typedef struct _point2d {
   double x,y;
 } point2d;
 
-GLfloat yellow[3] = {1.0, 1.0, 0.0};
 
-// When this is 1, all subsequent clicks will be added to the polygon
-// I can turn this off by pressing 's' and 'e'
-//int poly_init_mode = 0; 
+GLfloat red[3] = {1.0, 0.0, 0.0};
+GLfloat green[3] = {0.0, 1.0, 0.0};
+GLfloat blue[3] = {0.0, 0.0, 1.0};
+GLfloat yellow[3] = {1.0, 1.0, 0.0};
+GLfloat magenta[3] = {1.0, 0.0, 1.0};
+GLfloat cyan[3] = {0.0, 1.0, 1.0};
+GLfloat white[3] = {1.0, 1.0, 1.0};
+
 
 /* global variables */
 const int WINDOWSIZE = 750; 
@@ -45,6 +49,7 @@ double mouse_x=-10, mouse_y=-10;  //initialized to a point outside the window
 void display(void);
 void keypress(unsigned char key, int x, int y);
 void mousepress(int button, int state, int x, int y);
+void set_color();
 
 void initialize_polygon(); 
 void print_polygon(vector<point2d>& poly); 
@@ -94,6 +99,37 @@ void draw_circle(double x, double y){
    glVertex2f(x + + ((double)WINDOWSIZE)/2 + r*cos(theta), y + r*sin(theta));
   }
   glEnd();
+}
+
+
+/* **************************************** */
+/* Sets the glColor to the guard's color
+ */
+void set_color() {
+
+  int rand_num = rand() % 8;
+
+  if (rand_num == 0) {
+    glColor3fv(red);
+  }
+  else if (rand_num == 1) {
+    glColor3fv(green);
+  }
+  else if (rand_num == 2) {
+    glColor3fv(blue);
+  }
+  else if (rand_num == 3) {
+    glColor3fv(yellow);
+  }
+  else if (rand_num == 5) {
+    glColor3fv(magenta);
+  }
+  else if (rand_num == 6) {
+    glColor3fv(cyan);
+  } 
+  else {
+    glColor3fv(blue);
+  }
 }
 
 
@@ -148,7 +184,6 @@ void keypress(unsigned char key, int x, int y) {
       // set a and y to outside the window
       mouse_x=-10;
       mouse_y=-10;
-      glutPostRedisplay();
       break;
     case 'r':
       poly_init_mode = 0;
@@ -170,7 +205,12 @@ void keypress(unsigned char key, int x, int y) {
       parabolic_transformation();
       poly_init_mode = 1;
       break;
+    default:
+      printf("Unrecognized command.\n Press 'r' to see a reflection\n Press 't' to see a rotation\n Press 'h' to see a hyperbolic transformation\n Press 'p' to see a parabolic transformation\n"); // list instructions
+      return;
   }
+  set_color();
+  glutPostRedisplay();
 }
 
 void reflection() {
