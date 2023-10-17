@@ -1,9 +1,8 @@
 /* isom.cpp
 Danielle Simon
 
-The user can input a shape and specify isometries using
+The user can click to input a set of points and specify isometries using
 keyboard letters which are then computed and displayed.
-
 */
 
 #include <stdlib.h>
@@ -17,7 +16,6 @@ keyboard letters which are then computed and displayed.
 #include <GL/glut.h>
 #endif
 
-
 #include <vector> 
 
 using namespace std; 
@@ -30,11 +28,10 @@ GLfloat yellow[3] = {1.0, 1.0, 0.0};
 
 // When this is 1, all subsequent clicks will be added to the polygon
 // I can turn this off by pressing 's' and 'e'
-int poly_init_mode = 0; 
+//int poly_init_mode = 0; 
 
 /* global variables */
 const int WINDOWSIZE = 750; 
-const int INTERP_DIST = 1;
 
 //the current polygon 
 vector<point2d>  poly;
@@ -60,9 +57,6 @@ void parabolic_transformation();
 /* ****************************** */
 int main(int argc, char** argv) {
 
-  initialize_polygon();
-  //print_polygon(poly);
-
   /* initialize GLUT  */
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
@@ -85,51 +79,6 @@ int main(int argc, char** argv) {
 }
 
 
-/* ****************************** */
-/* initialize  polygon stored in global variable poly  */
-//Note: use our local coordinate system (0,0) to (WINSIZE,WINSIZE),
-//with the origin in the lower left corner.
-void initialize_polygon() {
-  
-  //clear the vector, in case something was there 
-  poly.clear(); 
-
-  double rad = 100; 
-  point2d p; 
-  for (double a=0; a<2*M_PI; a+=.5) {
-    p.x = WINDOWSIZE/2 + rad * cos (a); 
-    p.y = WINDOWSIZE/2 + rad * sin (a); 
-    poly.push_back (p); 
-  } 
-}
-
-
-/* ****************************** */
-/* draw the polygon */
-void draw_polygon(vector<point2d>& poly){
-   if (poly.size() == 0) return; 
-
-  //set color  and polygon mode 
-  glColor3fv(yellow);   
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
- 
-  int i;
-  for (i=0; i<poly.size()-1; i++) {
-    //draw a line from point i to i+1
-    glBegin(GL_LINES);
-    glVertex2f(poly[i].x, poly[i].y); 
-    glVertex2f(poly[i+1].x, poly[i+1].y);
-    glEnd();
-  }
-  //draw a line from the last point to the first  
-  int last=poly.size()-1; 
-    glBegin(GL_LINES);
-    glVertex2f(poly[last].x, poly[last].y); 
-    glVertex2f(poly[0].x, poly[0].y);
-    glEnd();
-}
-
-
 /* our coordinate system is (0,0) x (WINDOWSIZE,WINDOWSIZE) with the
    origin in the lower left corner 
 */
@@ -141,24 +90,9 @@ void draw_circle(double x, double y){
   double r = 5;
   glBegin(GL_POLYGON);
   for(double theta = 0; theta < 2*M_PI; theta+=.3){
-   glVertex2f(x + r*cos(theta), y + r*sin(theta));
+   glVertex2f(x + + ((double)WINDOWSIZE)/2 + r*cos(theta), y + r*sin(theta));
   }
   glEnd();
-}
-
-
-/* ******************************** */
-void print_polygon(vector<point2d>& poly) {
-  printf("polygon:"); 
-  for (unsigned int i=0; i<poly.size()-1; i++) {
-    printf("\tedge %d: [(%lf,%lf), (%lf,%lf)]\n",
-	   i, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y);
-  }
-  //print last edge from last point to first point 
-  int last = poly.size()-1; 
-    printf("\tedge %d: [(%lf,%lf), (%lf,%lf)]\n",
-	   last, poly[last].x, poly[last].y, poly[0].x, poly[0].y);
-
 }
 
 
@@ -173,7 +107,6 @@ void display(void) {
   glMatrixMode(GL_MODELVIEW); 
   glLoadIdentity();
 
-
   /* The default GL window is [-1,1]x[-1,1] with the origin in the
      center.  The camera is at (0,0,0) looking down negative
      z-axis.  
@@ -187,21 +120,13 @@ void display(void) {
      window to (-WINDOWSIZE/2, -WINDOWSIZE/2) */
   glTranslatef(-WINDOWSIZE/2, -WINDOWSIZE/2, 0); 
   
-  //now we draw in our local coordinate system (0,0) to
-  //(WINSIZE,WINSIZE), with the origin in the lower left corner.
+  // draw y axis
+  glBegin(GL_LINES);
+  glVertex2f(((double)WINDOWSIZE)/2, 0); 
+  glVertex2f(((double)WINDOWSIZE)/2, WINDOWSIZE);
+  glEnd();
 
-  //draw_polygon(poly); 
-  for (int i = 0; i < poly.size(); i++) {
-    draw_circle(poly[i].x, poly[i].y);
-  }
-
-  //draw a circle where the mouse was last clicked. Note that this
-  //point is stored as a global variable and is modified by the mouse handler function 
-  if (poly_init_mode) {
-   draw_circle(mouse_x, mouse_y); 
-  }
-
-  // to see linear interp
+  // display all points 
   for (int i = 0; i < poly.size(); i++) {
     draw_circle(poly[i].x, poly[i].y);
   }
@@ -217,16 +142,13 @@ void keypress(unsigned char key, int x, int y) {
     case 'q':	
       exit(0);
       break;
-    case 's': 
-      poly.clear(); 
-      mouse_x = mouse_y = 0; 
-      poly_init_mode = 1; 
-      glutPostRedisplay(); 
+    case 'c':
+      poly.clear();
+      // set a and y to outside the window
+      mouse_x=-10;
+      mouse_y=-10;
+      glutPostRedisplay();
       break;
-    case 'e':
-      poly_init_mode = 0;
-      glutPostRedisplay(); 
-      break; 
   }
 }
 
@@ -258,15 +180,13 @@ void mousepress(int button, int state, int x, int y) {
     //(x,y) are in window coordinates, where the origin is in the upper
     //left corner; our reference system has the origin in lower left
     //corner, this means we have to reflect y
-    mouse_x = (double)x;
+    //must also shift left to allow negative x values
+    mouse_x = (double)x - ((double)WINDOWSIZE)/2;
     mouse_y = (double)(WINDOWSIZE - y);  
 
-    if (poly_init_mode == 1) {
-      printf("mouse pressed at (%.1f,%.1f)\n", mouse_x, mouse_y);
-      // add this point to poly 
-      point2d p = {mouse_x, mouse_y};
-      poly.push_back(p);
-    }
+    printf("mouse pressed at (%.1f,%.1f)\n", mouse_x, mouse_y);
+    point2d p = {mouse_x, mouse_y};
+    poly.push_back(p);
   }
   
   glutPostRedisplay();
