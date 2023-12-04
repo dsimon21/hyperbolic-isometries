@@ -21,6 +21,10 @@ keyboard letters which are then computed and displayed.
 
 using namespace std; 
 
+#define NUM_RAND_POINTS 20
+
+#define PI 3.14159
+
 typedef struct _point2d {
   double x,y;
 } point2d;
@@ -37,17 +41,18 @@ GLfloat white[3] = {1.0, 1.0, 1.0};
 
 /* global variables */
 const int WINDOWSIZE = 750; 
-int poly_init_mode = 1;
-double k_x;
-double k_y;
-double lambda;
+int poly_init_mode = 0;
+double a;
+double b;
+double c;
+double d;
 
 //the current polygon 
 vector<point2d>  poly;
+vector<point2d> input_poly;
 
 //coordinates of the last mouse click
 double mouse_x=-10, mouse_y=-10;  //initialized to a point outside the window
-
 
 /* forward declarations of functions */
 void parse_arguments(int argc, char* const* argv);
@@ -58,17 +63,20 @@ void set_color();
 
 void initialize_polygon(); 
 void print_polygon(vector<point2d>& poly); 
-
-void reflection();
-void rotation();
-void hyperbolic_transformation();
-void parabolic_transformation();
+void perform_isom();
+void print_commands();
 
 
 /* ****************************** */
 int main(int argc, char** argv) {
 
   parse_arguments(argc, argv);
+  double adbc = a*d - b*c;
+  if (adbc < .999999 || adbc > 1.000001) {
+    printf("ad - bc must equal 1. ad - bc = %f. Please try again.\n", adbc);
+    exit(1);
+  }
+  print_commands();
 
   /* initialize GLUT  */
   glutInit(&argc, argv);
@@ -96,7 +104,7 @@ int main(int argc, char** argv) {
     returns: 1 if the arg passed in is an integer or 0 if not. */
 int isNumber(char* str) {
   for (int i = 0; i < strlen(str); i++) {
-    if (!isdigit(str[i]) && !(i == 0 && str[i] == 45)) {
+    if (!isdigit(str[i]) && !(i == 0 && str[i] == 45) && !(str[i] == 46)) {
       return 0;
     }
   }
@@ -109,42 +117,77 @@ int isNumber(char* str) {
 */
 void parse_arguments(int argc, char* const* argv) { 
   
-  char c;
-  while ((c = getopt (argc, argv, "x:y:l:")) != -1){
-    switch(c){
-      case 'x':
+  bool inputted_a = false;
+  bool inputted_b = false;
+  bool inputted_c = false;
+  bool inputted_d = false;
+
+  char o;
+  while ((o = getopt (argc, argv, "a:b:c:d:")) != -1){
+    switch(o){
+      case 'a':
         if (isNumber(optarg)) {
-          k_x = atof(optarg);
+          a = atof(optarg);
+          inputted_a = true;
         }
         else {
-          fprintf (stderr, "Option -x requires a numerical argument.\n");
+          fprintf (stderr, "Option -a requires a numerical argument.\n");
           exit(1);
         }
         break;
-      case 'y':
+      case 'b':
         if (isNumber(optarg)) {
-          k_y = atof(optarg);
+          b = atof(optarg);
+          inputted_b = true;
         }
         else {
-          fprintf (stderr, "Option -y requires a numerical argument.\n");
+          fprintf (stderr, "Option -b requires a numerical argument.\n");
           exit(1);
         }
         break;
-      case 'l':
-        if (isNumber(optarg) && atof(optarg) >= 0) {
-          lambda = atof(optarg);
+      case 'c':
+        if (isNumber(optarg)) {
+          c = atof(optarg);
+          inputted_c = true;
         }
         else {
-          fprintf (stderr, "Option -l requires a non-negative numerical argument.\n");
+          fprintf (stderr, "Option -c requires a numerical argument.\n");
+          exit(1);
+        }
+        break;
+      case 'd':
+        if (isNumber(optarg)) {
+          d = atof(optarg);
+          inputted_d = true;
+        }
+        else {
+          fprintf (stderr, "Option -d requires a numerical argument.\n");
           exit(1);
         }
         break;
       default:
-        fprintf(stderr, "Enter -x [x value of k] -y [y value of k] -l [lambda]");
+        fprintf(stderr, "Enter -a [real number] -b [real number] -c [real number] -d [real number]\n");
         exit(1);
     }
   }
+
+  if (!inputted_a || !inputted_b || !inputted_c || !inputted_d) {
+    fprintf(stderr, "Enter -a [real number] -b [real number] -c [real number] -d [real number]\n");
+    exit(1);
+  }
   
+}
+
+/* Prints all command options */
+void print_commands() {
+  printf("Command menu:\n");
+  printf("Press s to enter add points mode\n");
+  printf("Press e to exit add points mode\n");
+  printf("Press i to see the isometry\n");
+  printf("Press r to revert to the initial input points\n");
+  printf("Press c to revert to clear the points\n");
+  printf("Press g to generate %d random points\n", NUM_RAND_POINTS);
+  printf("Press h to see the help menu\n\n");
 }
 
 
@@ -159,7 +202,7 @@ void draw_circle(double x, double y){
   double r = 5;
   glBegin(GL_POLYGON);
   for(double theta = 0; theta < 2*M_PI; theta+=.3){
-   glVertex2f(x + + ((double)WINDOWSIZE)/2 + r*cos(theta), y + r*sin(theta));
+   glVertex2f(x + ((double)WINDOWSIZE)/2 + r*cos(theta), y + r*sin(theta));
   }
   glEnd();
 }
@@ -192,6 +235,58 @@ void set_color() {
   } 
   else {
     glColor3fv(blue);
+  }
+}
+
+
+/* Performs the user entered isometry on each point */
+void perform_isom() {
+
+  // Determine the type of isometry
+  double discriminant = pow(a + d, 2);
+  if (discriminant > 4) {
+    printf("Performing a hyperbolic transformation...\n");
+  }
+  else if (discriminant < 4) {
+    printf("Performing a elliptic transformation...\n");
+  }
+  else {
+    printf("Performing a parabolic transformation...\n");
+  }
+
+  // Perform the isometry on each point
+  double x;
+  double y;
+  double magnatude_sqd;
+  double denominator;
+  for (int i = 0; i < poly.size(); i++) {
+    x = poly[i].x;
+    y = poly[i].y;
+    magnatude_sqd = pow(x, 2) + pow(y, 2);
+    denominator = pow(c, 2)*magnatude_sqd + c*d*2*x + pow(d, 2);
+    // if (denominator == 0) {
+    //   printf("DENOMINATOR IS 0!");
+    // }
+    //printf("denominator: %f", denominator);
+    //printf("a,b,c,d: %f %f %f %f", a,b,c,d);
+    printf("(%.3f, %.3f) --> ", x, y);
+    poly[i].x = (a*c*magnatude_sqd + a*d*x + b*c*x + b*d) / denominator;
+    //printf("setting x to: (%f*%f*%f + %f*%f*%f + %f*%f*%f + %f*%f) / %f", a,c,magnatude_sqd, a, d, x, b, c, x, b, d);
+    poly[i].y = (a*d*y - b*c*y) / denominator;
+    printf("(%.3f, %.3f)\n", poly[i].x, poly[i].y);
+  }
+  glutPostRedisplay();
+
+}
+
+
+/* Initializes random points */
+void generate_random_points() {
+  point2d p;
+  for (int i = 0; i < NUM_RAND_POINTS; i++) {
+    p.x = (rand() % WINDOWSIZE) - (WINDOWSIZE/2);
+    p.y = rand() % WINDOWSIZE;
+    poly.push_back(p);
   }
 }
 
@@ -239,61 +334,48 @@ void display(void) {
 /* ****************************** */
 void keypress(unsigned char key, int x, int y) {
   switch(key) {
+    case 'h':
+      print_commands();
     case 'q':	
       exit(0);
       break;
+    case 's':
+      printf("Add points mode is activate - click in the window to add points\n");
+      poly_init_mode = 1;
+      break;
+    case 'e':
+      printf("Exited add points mode\n");
+      poly_init_mode = 0;
+      break;
     case 'c':
+      printf("Points cleared\n");
+      printf("Add points mode is activate - click in the window to add points\n");
       poly.clear();
       // set a and y to outside the window
       mouse_x=-10;
       mouse_y=-10;
+      poly_init_mode = 0;
+      break;
+    case 'i':
+      perform_isom();
+      set_color();
       break;
     case 'r':
-      poly_init_mode = 0;
-      reflection();
-      poly_init_mode = 1;
+      printf("Resetting to inital input points\n");
+      poly = input_poly;
+      glColor3fv(white);
       break;
-    case 't':
-      poly_init_mode = 0;
-      rotation();
-      poly_init_mode = 1;
-      break;
-    case 'h':
-      poly_init_mode = 0;
-      hyperbolic_transformation();
-      poly_init_mode = 1;
-      break;
-    case 'p':
-      poly_init_mode = 0;
-      parabolic_transformation();
-      poly_init_mode = 1;
+    case 'g':
+      printf("Generating %d random points.\n", NUM_RAND_POINTS);
+      generate_random_points();
+      glColor3fv(white);
       break;
     default:
-      printf("Unrecognized command.\n Press 'r' to see a reflection\n Press 't' to see a rotation\n Press 'h' to see a hyperbolic transformation\n Press 'p' to see a parabolic transformation\n"); // list instructions
+      printf("Unrecognized command.\n");
+      print_commands();
       return;
   }
-  set_color();
   glutPostRedisplay();
-}
-
-void reflection() {
-  printf("performing reflection...\n");
-  return;
-}
-
-void rotation() {
-  printf("performing rotation...\n");
-  return;
-}
-
-void hyperbolic_transformation() {
-  printf("performing hyperbolic transformation...\n");
-  return;
-}
-
-void parabolic_transformation() {
-  printf("performing parabolic transformation...\n");
-  return;
 }
 
 
@@ -329,9 +411,9 @@ void mousepress(int button, int state, int x, int y) {
     mouse_y = (double)(WINDOWSIZE - y);  
 
     if (poly_init_mode) {
-      printf("mouse pressed at (%.1f,%.1f)\n", mouse_x, mouse_y);
       point2d p = {mouse_x, mouse_y};
       poly.push_back(p);
+      input_poly.push_back(p);
     }
   }
   
