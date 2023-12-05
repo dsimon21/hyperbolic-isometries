@@ -245,13 +245,13 @@ void perform_isom() {
   // Determine the type of isometry
   double discriminant = pow(a + d, 2);
   if (discriminant > 4) {
-    printf("Performing a hyperbolic transformation...\n");
+    printf("Performing a hyperbolic isometry...\n");
   }
   else if (discriminant < 4) {
-    printf("Performing a elliptic transformation...\n");
+    printf("Performing a elliptic isometry...\n");
   }
   else {
-    printf("Performing a parabolic transformation...\n");
+    printf("Performing a parabolic isometry...\n");
   }
 
   // Perform the isometry on each point
@@ -264,14 +264,8 @@ void perform_isom() {
     y = poly[i].y;
     magnatude_sqd = pow(x, 2) + pow(y, 2);
     denominator = pow(c, 2)*magnatude_sqd + c*d*2*x + pow(d, 2);
-    // if (denominator == 0) {
-    //   printf("DENOMINATOR IS 0!");
-    // }
-    //printf("denominator: %f", denominator);
-    //printf("a,b,c,d: %f %f %f %f", a,b,c,d);
     printf("(%.3f, %.3f) --> ", x, y);
     poly[i].x = (a*c*magnatude_sqd + a*d*x + b*c*x + b*d) / denominator;
-    //printf("setting x to: (%f*%f*%f + %f*%f*%f + %f*%f*%f + %f*%f) / %f", a,c,magnatude_sqd, a, d, x, b, c, x, b, d);
     poly[i].y = (a*d*y - b*c*y) / denominator;
     printf("(%.3f, %.3f)\n", poly[i].x, poly[i].y);
   }
@@ -287,6 +281,7 @@ void generate_random_points() {
     p.x = (rand() % WINDOWSIZE) - (WINDOWSIZE/2);
     p.y = rand() % WINDOWSIZE;
     poly.push_back(p);
+    input_poly.push_back(p);
   }
 }
 
