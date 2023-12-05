@@ -47,7 +47,7 @@ Other rotations with large radii: \
 **Parabolic**
 
 Right shift: \
-./isom -a 1 -b 4 -c .0 -d 1
+./isom -a 1 -b 4 -c 0 -d 1
 
 Other parabolic isometries: \
 ./isom -a 2 -b -1 -c 1 -d 0
