@@ -187,6 +187,7 @@ void print_commands() {
   printf("Press r to revert to the initial input points\n");
   printf("Press c to revert to clear the points\n");
   printf("Press g to generate %d random points\n", NUM_RAND_POINTS);
+  printf("Press q to quit\n");
   printf("Press h to see the help menu\n\n");
 }
 
