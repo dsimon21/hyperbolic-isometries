@@ -14,6 +14,7 @@ Press i to see the isometry \
 Press r to revert to the initial input points \
 Press c to revert to clear the points \
 Press g to generate 20 random points \
+Press q to quit \
 Press h to see the help menu
 
 # Notes for choosing a,b,c,d
