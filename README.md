@@ -17,7 +17,7 @@ Press g to generate 20 random points \
 Press h to see the help menu
 
 # Notes for choosing a,b,c,d
-1. ad-bc must equal 1
+1. ad-bc cannot equal 0
 2. if (a+d)^2 > 4, a loxodromic isometry will be displayed
 3. if (a+d)^2 = 4, a parabolic isometry will be displayed
 4. if (a+d)^2 < 4, an elliptic isometry will be displayed
