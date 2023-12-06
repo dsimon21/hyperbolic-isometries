@@ -72,8 +72,8 @@ int main(int argc, char** argv) {
 
   parse_arguments(argc, argv);
   double adbc = a*d - b*c;
-  if (adbc < .000001 && adbc > -0.000001) {
-    printf("ad - bc cannot equal 0. Please try again.\n");
+  if (!(adbc < 1.000001 && adbc > .99999)) {
+    printf("ad - bc = %f. ad-bc must equal 1. Please try again.\n", adbc);
     exit(1);
   }
   print_commands();
