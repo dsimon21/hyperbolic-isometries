@@ -8,6 +8,7 @@ This project computes and displays orientation preserving hyperbolic isometries 
 To run the program enter ./isom -a [real number] -b [real number] -c [real number] -d [real number]
 
 # Program commands
+Note: you will need to click on the popup window once to begin using these commands
 Press s to enter add points mode \
 Press e to exit add points mode \
 Press i to see the isometry \
